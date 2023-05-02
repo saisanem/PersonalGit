@@ -1,0 +1,23 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import current_timestamp, uuid
+
+#Initializing a SparkSession
+spark = SparkSession.builder \
+            .appName("Load CSV into DeltaLake") \
+            .getOrCreate()
+
+#Assuming the files are in same folder, reading CSV files into DataFrame
+df = spark.read \
+        .option("header", "true") \
+        .option("inferSchema", "true") \
+        .csv("D:/Krishna/Test/*.csv")
+
+#adding ingestion_tms and batch_id columns to the DataFrame
+df_with_metadata = df.withColumn("ingestion_tms", current_timestamp()) \
+                    .withColumn("batch_id", uuid())
+
+#write the DataFrame to DeltaLake in APPEND mode
+df_with_metadata.write \
+        .format("delta") \
+        .mode("append") \
+        .save("D:/Krishna/Output")
